@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LanguageData>
+    <CustomActions.CustomActions>Custom Actions</CustomActions.CustomActions>
+    <CustomActions.EnableActions>Enable Actions</CustomActions.EnableActions>
+    <CustomActions.NewAction>New Action</CustomActions.NewAction>
+    <CustomActions.NameForNewAction>Name for New Action</CustomActions.NameForNewAction>
+    <CustomActions.DoWhen>Do When</CustomActions.DoWhen>
+    <CustomActions.Tip1000SecondsInARimworldDay>1000 seconds in a RimWorld day</CustomActions.Tip1000SecondsInARimworldDay>
+    <CustomActions.ActionInterval>Interval</CustomActions.ActionInterval>
+    <CustomActions.EditSubActions>Edit Sub-actions</CustomActions.EditSubActions>
+    <CustomActions.AddSubAction>Add Sub-action</CustomActions.AddSubAction>
+    <CustomActions.MakeCustomAction>Make Custom Action</CustomActions.MakeCustomAction>
+    <CustomActions.EditingAction>Editing Action</CustomActions.EditingAction>
+    <CustomActions.StartAction>Start Action</CustomActions.StartAction>
+
+    <CustomActions.Harvest>Harvest</CustomActions.Harvest>
+    <CustomActions.ClearBillStack>Clear Pawn's Billstack</CustomActions.ClearBillStack>
+</LanguageData>

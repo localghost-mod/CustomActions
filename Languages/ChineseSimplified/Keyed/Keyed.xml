@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<LanguageData>
+    <CustomActions.CustomActions>自定义操作</CustomActions.CustomActions>
+    <CustomActions.EnableActions>启用操作</CustomActions.EnableActions>
+    <CustomActions.NewAction>新操作</CustomActions.NewAction>
+    <CustomActions.NameForNewAction>新操作的名称</CustomActions.NameForNewAction>
+    <CustomActions.DoWhen>何时操作</CustomActions.DoWhen>
+    <CustomActions.Tip1000SecondsInARimworldDay>RimWorld的一天是1000秒。</CustomActions.Tip1000SecondsInARimworldDay>
+    <CustomActions.ActionInterval>间隔</CustomActions.ActionInterval>
+    <CustomActions.EditSubActions>编辑子操作</CustomActions.EditSubActions>
+    <CustomActions.AddSubAction>添加子操作</CustomActions.AddSubAction>
+    <CustomActions.MakeCustomAction>创建自定义操作</CustomActions.MakeCustomAction>
+    <CustomActions.EditingAction>编辑操作</CustomActions.EditingAction>
+    <CustomActions.StartAction>开始操作</CustomActions.StartAction>
+
+    <CustomActions.Harvest>收获</CustomActions.Harvest>
+    <CustomActions.ClearBillStack>清除手术清单</CustomActions.ClearBillStack>
+</LanguageData>
