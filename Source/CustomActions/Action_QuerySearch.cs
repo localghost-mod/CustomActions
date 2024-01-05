@@ -84,7 +84,7 @@ namespace CustomActions
             if (
                 !enableAll
                 || !enabled
-                || action == null
+                || subActions.NullOrEmpty()
                 || (maxActionCount != -1 && curActionCount == maxActionCount)
                 || (
                     curActionCount > 0
