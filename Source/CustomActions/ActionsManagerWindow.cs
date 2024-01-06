@@ -288,7 +288,7 @@ namespace CustomActions
                         )
                 )
                 .ToList();
-            _result.Concat(
+            _result = _result.Concat(
                 new List<FloatMenuOption>
                 {
                     new FloatMenuOption(
@@ -308,7 +308,7 @@ namespace CustomActions
                         () => Find.WindowStack.Add(new FloatMenu(MedicalRecipeOption))
                     )
                 }
-            );
+            ).ToList();
             return _result;
         }
 
