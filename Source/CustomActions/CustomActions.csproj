@@ -31,6 +31,10 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="0Harmony">
+      <HintPath>..\..\..\..\..\..\workshop\content\294100\2009463077\Current\Assemblies\0Harmony.dll</HintPath>
+      <Private>False</Private>
+    </Reference>
     <Reference Include="Assembly-CSharp">
       <HintPath>..\..\..\..\RimWorldWin64_Data\Managed\Assembly-CSharp.dll</HintPath>
       <Private>False</Private>
@@ -51,7 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MedicalRecipesUtility.cs" />
-    <Compile Include="PlantUtility.cs" />
+    <Compile Include="DesignatorUtility.cs" />
     <Compile Include="SearchEditorWindow.cs" />
     <Compile Include="ActionsManagerWindow.cs" />
     <Compile Include="Action_QuerySearch.cs" />

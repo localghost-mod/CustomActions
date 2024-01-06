@@ -13,6 +13,5 @@
     <CustomActions.EditingAction>编辑操作</CustomActions.EditingAction>
     <CustomActions.StartAction>开始操作</CustomActions.StartAction>
 
-    <CustomActions.Harvest>收获</CustomActions.Harvest>
     <CustomActions.ClearBillStack>清除手术清单</CustomActions.ClearBillStack>
 </LanguageData>

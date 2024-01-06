@@ -262,38 +262,53 @@ namespace CustomActions
                         )
                 )
                 .ToList();
-            var pawn = new Pawn();
-            var _result = new List<FloatMenuOption>
+            var designatorNames = new List<string>
             {
-                new FloatMenuOption(
-                    "CustomActions.Harvest".Translate(),
-                    () =>
-                        subActions.Add(
-                            new SubAction(
-                                "CustomActions.PlantUtility",
-                                "Harvest",
-                                new List<string>(),
-                                "CustomActions.Harvest".Translate()
-                            )
-                        )
-                ),
-                new FloatMenuOption(
-                    "CustomActions.ClearBillStack".Translate(),
-                    () =>
-                        subActions.Add(
-                            new SubAction(
-                                "CustomActions.MedicalRecipesUtility",
-                                "ClearBillStack",
-                                new List<string>(),
-                                "CustomActions.ClearBillStack".Translate()
-                            )
-                        )
-                ),
-                new FloatMenuOption(
-                    "MedicalOperations".Translate(),
-                    () => Find.WindowStack.Add(new FloatMenu(MedicalRecipeOption))
-                )
+                "Harvest",
+                "Mine",
+                "Deconstruct",
+                "HaulThings",
+                "Tame",
+                "Hunt"
             };
+            var _result = designatorNames
+                .Select(
+                    designatorName =>
+                        new FloatMenuOption(
+                            ("Designator" + designatorName).Translate(),
+                            () =>
+                                subActions.Add(
+                                    new SubAction(
+                                        "CustomActions.DesignatorUtility",
+                                        designatorName,
+                                        new List<string>(),
+                                        ("Designator" + designatorName).Translate()
+                                    )
+                                )
+                        )
+                )
+                .ToList();
+            _result.Concat(
+                new List<FloatMenuOption>
+                {
+                    new FloatMenuOption(
+                        "CustomActions.ClearBillStack".Translate(),
+                        () =>
+                            subActions.Add(
+                                new SubAction(
+                                    "CustomActions.MedicalRecipesUtility",
+                                    "ClearBillStack",
+                                    new List<string>(),
+                                    "CustomActions.ClearBillStack".Translate()
+                                )
+                            )
+                    ),
+                    new FloatMenuOption(
+                        "MedicalOperations".Translate(),
+                        () => Find.WindowStack.Add(new FloatMenu(MedicalRecipeOption))
+                    )
+                }
+            );
             return _result;
         }
 

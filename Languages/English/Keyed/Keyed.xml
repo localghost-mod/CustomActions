@@ -13,6 +13,5 @@
     <CustomActions.EditingAction>Editing Action</CustomActions.EditingAction>
     <CustomActions.StartAction>Start Action</CustomActions.StartAction>
 
-    <CustomActions.Harvest>Harvest</CustomActions.Harvest>
     <CustomActions.ClearBillStack>Clear Pawn's Billstack</CustomActions.ClearBillStack>
 </LanguageData>
