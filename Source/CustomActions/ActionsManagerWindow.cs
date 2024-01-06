@@ -200,7 +200,7 @@ namespace CustomActions
             row.Label("CustomActions.DoWhen".Translate());
 
             //actionInterval
-            textRect = row.GetRect(36);
+            textRect = row.GetRect(60);
             textRect.height -= 4;
             textRect.width -= 4;
             dummyStr = null;
