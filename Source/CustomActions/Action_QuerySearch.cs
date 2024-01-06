@@ -94,6 +94,9 @@ namespace CustomActions
             )
                 return;
             var result = SearchResult();
+            // fix lagging if not active,
+            // TODO: rename to lastSearchTick when release
+            lastActionTick = Find.TickManager.TicksGame;
             int count = result.allThingsCount;
             bool active =
                 compareType == CompareType.Greater
@@ -107,7 +110,6 @@ namespace CustomActions
                 return;
             action(result);
             curActionCount += 1;
-            lastActionTick = Find.TickManager.TicksGame;
         }
 
         private SearchResult SearchResult()
