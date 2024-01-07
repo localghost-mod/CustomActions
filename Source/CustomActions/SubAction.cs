@@ -7,8 +7,8 @@ namespace CustomActions
 {
     public class SubAction : IExposable
     {
-        private Action<SearchResult> _action;
-        public Action<SearchResult> action
+        private Action<SearchResult, int> _action;
+        public Action<SearchResult, int> action
         {
             get { return _action ?? (_action = ToAction()); }
         }
@@ -27,9 +27,9 @@ namespace CustomActions
             this.label = label;
         }
 
-        public Action<SearchResult> ToAction()
+        public Action<SearchResult, int> ToAction()
         {
-            return (Action<SearchResult>)
+            return (Action<SearchResult, int>)
                 Type.GetType(category).GetMethod(name).Invoke(null, parameters.ToArray());
         }
 

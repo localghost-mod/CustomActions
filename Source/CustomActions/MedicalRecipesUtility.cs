@@ -111,46 +111,52 @@ namespace CustomActions
             }
         }
 
-        public static Action<SearchResult> MedicalRecipe(string recipeName, string partName)
+        public static Action<SearchResult, int> MedicalRecipe(string recipeName, string partName)
         {
             var recipe = getRecipeByName[recipeName];
             var part = partName == null ? null : getPartByName[partName];
-            return result =>
-                result.allThings.ForEach(thing =>
-                {
-                    var pawn = thing as Pawn;
-                    if (pawn != null)
+            return (result, count) =>
+                result
+                    .allThings.FirstOrAll(count)
+                    .ForEach(thing =>
                     {
-                        // check if the pawn has the part
-                        if (
-                            part != null
-                            && !pawn.health.hediffSet.GetNotMissingParts().Contains(part)
-                        )
-                            return;
-                        // check if has the same recipe
-                        if (
-                            pawn.BillStack.Bills.Any(
-                                _bill =>
-                                    _bill.recipe == recipe && (_bill as Bill_Medical)?.Part == part
+                        var pawn = thing as Pawn;
+                        if (pawn != null)
+                        {
+                            // check if the pawn has the part
+                            if (
+                                part != null
+                                && !pawn.health.hediffSet.GetNotMissingParts().Contains(part)
                             )
-                        )
-                            return;
-                        // check if the hediff exists
-                        if (
-                            recipe.addsHediff != null
-                            && pawn.health.hediffSet.HasHediff(recipe.addsHediff)
-                        )
-                            return;
-                        var bill = new Bill_Medical(recipe, null);
-                        bill.Part = part;
-                        pawn.BillStack.AddBill(bill);
-                    }
-                });
+                                return;
+                            // check if has the same recipe
+                            if (
+                                pawn.BillStack.Bills.Any(
+                                    _bill =>
+                                        _bill.recipe == recipe
+                                        && (_bill as Bill_Medical)?.Part == part
+                                )
+                            )
+                                return;
+                            // check if the hediff exists
+                            if (
+                                recipe.addsHediff != null
+                                && pawn.health.hediffSet.HasHediff(recipe.addsHediff)
+                            )
+                                return;
+                            var bill = new Bill_Medical(recipe, null);
+                            bill.Part = part;
+                            pawn.BillStack.AddBill(bill);
+                        }
+                    });
         }
 
-        public static Action<SearchResult> ClearBillStack()
+        public static Action<SearchResult, int> ClearBillStack()
         {
-            return result => result.allThings.ForEach(thing => (thing as Pawn)?.BillStack.Clear());
+            return (result, count) =>
+                result
+                    .allThings.FirstOrAll(count)
+                    .ForEach(thing => (thing as Pawn)?.BillStack.Clear());
         }
 
         public static string ToString(Tuple<RecipeDef, BodyPartRecord> recipeWithPart)

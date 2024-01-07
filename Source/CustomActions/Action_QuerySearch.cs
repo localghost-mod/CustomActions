@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using RimWorld;
 using TD_Find_Lib;
 using Verse;
 
@@ -7,26 +8,71 @@ namespace CustomActions
 {
     public class QuerySearchAction : IExposable, IQuerySearch
     {
-        public QuerySearch search;
+        public static bool enableAll = true;
+
+        public string name;
+
+        private QuerySearch search;
         public QuerySearch Search => search;
         public Action_QuerySearch action;
 
+        public int searchInterval = 1000;
+        public int countToAction = 0;
+        public bool enabled = false;
+
+        public CompareType compareType;
+
+        private int lastSearchTick = -1;
+
         public QuerySearchAction()
         {
-            this.action = new Action_QuerySearch(this);
+            action = new Action_QuerySearch();
+            search = new QuerySearch() { name = "TD.NewSearch".Translate(), active = true };
+            search.SetSearchCurrentMap();
         }
 
-        public QuerySearchAction(QuerySearch search, bool enabled = false)
+        public QuerySearchAction(QuerySearch search)
         {
+            action = new Action_QuerySearch();
             this.search = search;
             this.search.active = true;
+        }
 
-            this.action = new Action_QuerySearch(this);
+        public void TrySearch()
+        {
+            if (
+                !enableAll
+                || !enabled
+                || action.Empty
+                || Find.TickManager.TicksGame - lastSearchTick
+                    < searchInterval * GenTicks.TicksPerRealSecond
+            )
+                return;
+            search.RemakeList();
+            lastSearchTick = Find.TickManager.TicksGame;
+            int count = search.result.allThingsCount;
+            bool active =
+                compareType == CompareType.Greater
+                    ? count > countToAction
+                    : compareType == CompareType.Equal
+                        ? count == countToAction
+                        : compareType == CompareType.Less
+                            ? count < countToAction
+                            : false;
+            if (active)
+                action.DoAction();
         }
 
         public void ExposeData()
         {
+            Scribe_Values.Look(ref name, "name");
             Scribe_Deep.Look(ref search, "search");
+            Scribe_Deep.Look(ref action, "action");
+            Scribe_Values.Look(ref searchInterval, "searchInterval");
+            Scribe_Values.Look(ref countToAction, "countToAction");
+            Scribe_Values.Look(ref enabled, "enabled");
+            Scribe_Values.Look(ref compareType, "compareType");
+            Scribe_Values.Look(ref lastSearchTick, "lastSearchTick");
             action.ExposeData();
         }
     }
@@ -40,82 +86,45 @@ namespace CustomActions
 
     public class Action_QuerySearch : IExposable
     {
-        public QuerySearchAction searchAction;
+        public QuerySearch filter;
         public List<SubAction> subActions;
+        public int count;
 
-        public Action<SearchResult> _action;
-        public Action<SearchResult> action =>
+        private Action<SearchResult, int> _action;
+        public Action<SearchResult, int> action =>
             _action
-            ?? (_action = result => subActions.ForEach(subAction => subAction.action(result)));
-
-        public bool enabled = false;
-        // TODO
-        public int maxActionCount = -1; // the maximal count to do action, -1 means loop
-        public int curActionCount = 0; // should be able to reset to 0
-        public int actionInterval = 1000; // the least time (in seconds) to do the next action, should not be too small, default: 1000 (a day).
-        public int countToAction = 0;
-        private int lastActionTick = -1;
-        public CompareType compareType;
-
-        public static bool enableAll = true;
+            ?? (
+                _action = (result, count) =>
+                    subActions.ForEach(subAction => subAction.action(result, count))
+            );
 
         public static readonly string transferTags =
             SearchActionTransfer.TransferTag + "," + Settings.StorageTransferTag;
 
-        public Action_QuerySearch(QuerySearchAction searchAction)
+        public bool Empty => subActions.NullOrEmpty();
+
+        public Action_QuerySearch()
         {
-            this.searchAction = searchAction;
-            this.subActions = new List<SubAction>();
+            subActions = new List<SubAction>();
+            filter = new QuerySearch()
+            {
+                name = "CustomActions.NewFilter".Translate(),
+                active = true
+            };
+            filter.SetSearchCurrentMap();
         }
 
         public void ExposeData()
         {
-            Scribe_Values.Look(ref maxActionCount, "maxActionCount");
-            Scribe_Values.Look(ref curActionCount, "curActionCount");
-            Scribe_Values.Look(ref actionInterval, "actionInterval");
-            Scribe_Values.Look(ref countToAction, "countToAction");
-            Scribe_Values.Look(ref compareType, "countComp");
-            Scribe_Values.Look(ref enabled, "enabled");
+            Scribe_Deep.Look(ref filter, "filter");
             Scribe_Collections.Look(ref subActions, "subActions");
+            Scribe_Values.Look(ref count, "count");
         }
 
         public void DoAction()
         {
-            if (
-                !enableAll
-                || !enabled
-                || subActions.NullOrEmpty()
-                || (maxActionCount != -1 && curActionCount == maxActionCount)
-                || (
-                    curActionCount > 0
-                    && Find.TickManager.TicksGame - lastActionTick
-                        < actionInterval * GenTicks.TicksPerRealSecond
-                )
-            )
-                return;
-            var result = SearchResult();
-            // fix lagging if not active,
-            // TODO: rename to lastSearchTick when release
-            lastActionTick = Find.TickManager.TicksGame;
-            int count = result.allThingsCount;
-            bool active =
-                compareType == CompareType.Greater
-                    ? count > countToAction
-                    : compareType == CompareType.Equal
-                        ? count == countToAction
-                        : compareType == CompareType.Less
-                            ? count < countToAction
-                            : false;
-            if (!active)
-                return;
-            action(result);
-            curActionCount += 1;
-        }
-
-        private SearchResult SearchResult()
-        {
-            searchAction.search.RemakeList();
-            return searchAction.search.result;
+            filter.RemakeList();
+            action(filter.result, count);
         }
     }
 }

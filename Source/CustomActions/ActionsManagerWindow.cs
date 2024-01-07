@@ -16,12 +16,9 @@ namespace CustomActions
         protected override void SetInitialSizeAndPosition()
         {
             base.SetInitialSizeAndPosition();
-            windowRect.x = Window.StandardMargin;
+            windowRect.x = StandardMargin;
             windowRect.y =
-                UI.screenHeight
-                - MainButtonDef.ButtonHeight
-                - this.windowRect.height
-                - Window.StandardMargin;
+                UI.screenHeight - MainButtonDef.ButtonHeight - windowRect.height - StandardMargin;
         }
 
         public ActionsManagerWindow()
@@ -84,7 +81,7 @@ namespace CustomActions
             Widgets.CheckboxLabeled(
                 enableRect,
                 "CustomActions.EnableActions".Translate(),
-                ref Action_QuerySearch.enableAll
+                ref QuerySearchAction.enableAll
             );
 
             //Scrolling!
@@ -105,14 +102,11 @@ namespace CustomActions
             Find.WindowStack.Add(
                 new Dialog_Name(
                     "CustomActions.NewAction".Translate(),
-                    n =>
+                    name =>
                     {
-                        QuerySearch search = new QuerySearch() { name = n };
-                        search.SetSearchAllMaps();
-                        QuerySearchAction searchAction = new QuerySearchAction(search);
+                        QuerySearchAction searchAction = new QuerySearchAction() { name = name };
                         comp.AddAction(searchAction);
-
-                        PopUpEditor(searchAction);
+                        PopUpEditor(searchAction.action.filter);
                     },
                     "CustomActions.NameForNewAction".Translate(),
                     name => comp.HasSavedAction(name)
@@ -120,12 +114,12 @@ namespace CustomActions
             );
         }
 
-        public void PopUpEditor(QuerySearchAction searchAction)
+        public void PopUpEditor(QuerySearch search)
         {
-            var editor = new SearchEditorWindow(searchAction);
+            var editor = new SearchEditorWindow(search);
 
             Find.WindowStack.Add(editor);
-            editor.windowRect.x = Window.StandardMargin;
+            editor.windowRect.x = StandardMargin;
             editor.windowRect.y = windowRect.yMin / 3;
             editor.windowRect.yMax = windowRect.yMin;
         }
@@ -145,80 +139,61 @@ namespace CustomActions
 
         public override string Name => "TD.ActiveSearches".Translate();
 
-        public override void DrawRowButtons(WidgetRow row, QuerySearchAction searchAction, int i)
+        public new void DrawQuerySearchList(Listing_StandardIndent listing)
         {
-            if (row.ButtonIcon(FindTex.Edit, "TD.EditThisSearch".Translate()))
-                parent.PopUpEditor(searchAction);
-
-            if (row.ButtonIcon(TexButton.Rename))
-                comp.RenameAction(searchAction);
-
-            if (row.ButtonIcon(FindTex.Trash))
+            float startHeight = listing.CurHeight;
+            float reorderRectHeight = listing.CurHeight;
+            const float RowHeight = WidgetRow.IconSize + 6;
+            // Reorder Search rect
+            if (Event.current.type == EventType.Repaint)
             {
-                if (Event.current.shift)
-                    comp.RemoveAction(searchAction);
-                else
-                    Find.WindowStack.Add(
-                        Dialog_MessageBox.CreateConfirmation(
-                            "TD.Delete0".Translate(searchAction.search.name),
-                            () => comp.RemoveAction(searchAction),
-                            true
-                        )
-                    );
+                Rect reorderRect = new Rect(
+                    0f,
+                    startHeight - Text.LineHeight,
+                    listing.ColumnWidth,
+                    reorderRectHeight + Text.LineHeight
+                );
+                reorderID = ReorderableWidget.NewGroup(
+                    DoReorderSearch,
+                    ReorderableDirection.Vertical,
+                    reorderRect,
+                    1f,
+                    extraDraggedItemOnGUI: (int index, Vector2 dragStartPos) =>
+                        DrawMouseAttachedQuerySearch(list[index].Search, listing.ColumnWidth)
+                );
             }
 
-            SearchStorage.ButtonChooseExportSearch(
-                row,
-                searchAction.search,
-                SearchActionTransfer.TransferTag
-            );
+            // List of QuerySearches
+            for (int i = 0; i < Count; i++)
+            {
+                DrawPreRow(listing, i);
+                var item = list[i];
+                QuerySearch search = item.action.filter;
+                Rect rowRect = listing.GetRect(RowHeight);
+
+                var row = new WidgetRow(
+                    rowRect.x,
+                    rowRect.y,
+                    UIDirection.RightThenDown,
+                    rowRect.width
+                );
+
+                // Buttons
+                DrawRowButtons(row, item, i);
+
+
+                DrawExtraRowRect(rowRect, item, i);
+
+                ReorderableWidget.Reorderable(reorderID, rowRect);
+            }
+            reorderRectHeight = listing.CurHeight - startHeight;
+
+            DrawPostList(listing);
         }
 
-        public override void DrawExtraRowRect(Rect rowRect, QuerySearchAction searchAction, int i)
+        public override void DrawRowButtons(WidgetRow row, QuerySearchAction searchAction, int i)
         {
-            WidgetRow row = new WidgetRow(rowRect.xMax, rowRect.y, UIDirection.LeftThenDown);
-
-            //Check off
-            row.Checkbox(ref searchAction.action.enabled);
-
-            //Show when (backwards right to left O_o)
-            Rect textRect = row.GetRect(60);
-            textRect.height -= 4;
-            textRect.width -= 4;
-            string dummyStr = null;
-            Widgets.TextFieldNumeric(
-                textRect,
-                ref searchAction.action.countToAction,
-                ref dummyStr,
-                0,
-                999999
-            );
-            if (row.ButtonText(SymbolFor(searchAction.action.compareType)))
-                searchAction.action.compareType = (CompareType)(
-                    (int)(searchAction.action.compareType + 1) % 3
-                );
-            row.Label("CustomActions.DoWhen".Translate());
-
-            //actionInterval
-            textRect = row.GetRect(60);
-            textRect.height -= 4;
-            textRect.width -= 4;
-            dummyStr = null;
-            Widgets.TextFieldNumeric(
-                textRect,
-                ref searchAction.action.actionInterval,
-                ref dummyStr,
-                1,
-                999999
-            );
-            TooltipHandler.TipRegion(
-                textRect,
-                "CustomActions.Tip1000SecondsInARimworldDay".Translate()
-            );
-            row.Label("CustomActions.ActionInterval".Translate());
-
-            //edit subaction
-            if (row.ButtonText("CustomActions.EditSubActions".Translate()))
+            if (row.ButtonIcon(FindTex.Edit, "CustomActions.EditAction".Translate()))
             {
                 var subActions = searchAction.action.subActions;
                 var Options = subActions
@@ -236,6 +211,80 @@ namespace CustomActions
                 );
                 Find.WindowStack.Add(new FloatMenu(Options));
             }
+            if (row.ButtonIcon(TexButton.Rename))
+                comp.RenameAction(searchAction);
+            row.Label(searchAction.name + ": ");
+            // set count
+            Rect textRect = row.GetRect(36);
+            textRect.height -= 4;
+            textRect.width -= 4;
+            string countStr = null;
+            Widgets.TextFieldNumeric(textRect, ref searchAction.action.count, ref countStr, 0, 999);
+            TooltipHandler.TipRegion(textRect, "CustomActions.Tip0MeansAll".Translate());
+            row.Label("CustomActions.OF".Translate());
+            if (row.ButtonIcon(FindTex.Edit, "CustomActions.EditFilter".Translate()))
+                parent.PopUpEditor(searchAction.action.filter);
+            // Name
+            row.Label(searchAction.action.filter.name);
+        }
+
+        public override void DrawExtraRowRect(Rect rowRect, QuerySearchAction searchAction, int i)
+        {
+            WidgetRow row = new WidgetRow(rowRect.xMax, rowRect.y, UIDirection.LeftThenDown);
+
+            if (row.ButtonIcon(FindTex.Trash))
+            {
+                if (Event.current.shift)
+                    comp.RemoveAction(searchAction);
+                else
+                    Find.WindowStack.Add(
+                        Dialog_MessageBox.CreateConfirmation(
+                            "TD.Delete0".Translate(searchAction.Search.name),
+                            () => comp.RemoveAction(searchAction),
+                            true
+                        )
+                    );
+            }
+
+            //Check off
+            row.Checkbox(ref searchAction.enabled);
+
+            // actionInterval
+            Rect textRect = row.GetRect(60);
+            textRect.height -= 4;
+            textRect.width -= 4;
+            string searchIntervalStr = null;
+            Widgets.TextFieldNumeric(
+                textRect,
+                ref searchAction.searchInterval,
+                ref searchIntervalStr,
+                1,
+                999999
+            );
+            TooltipHandler.TipRegion(
+                textRect,
+                "CustomActions.Tip1000SecondsInARimworldDay".Translate()
+            );
+            row.Label("CustomActions.SearchInterval".Translate() + " ");
+
+            // show when
+            textRect = row.GetRect(60);
+            textRect.height -= 4;
+            textRect.width -= 4;
+            string countToActionStr = null;
+            Widgets.TextFieldNumeric(
+                textRect,
+                ref searchAction.countToAction,
+                ref countToActionStr,
+                0,
+                999999
+            );
+            if (row.ButtonText(SymbolFor(searchAction.compareType)))
+                searchAction.compareType = (CompareType)((int)(searchAction.compareType + 1) % 3);
+            row.Label(searchAction.Search.name);
+            if (row.ButtonIcon(FindTex.Edit, "CustomActions.EditSearch".Translate()))
+                parent.PopUpEditor(searchAction.Search);
+            row.Label("CustomActions.DoWhen".Translate());
         }
 
         public List<FloatMenuOption> SubActionOptions(QuerySearchAction searchAction)
@@ -288,27 +337,29 @@ namespace CustomActions
                         )
                 )
                 .ToList();
-            _result = _result.Concat(
-                new List<FloatMenuOption>
-                {
-                    new FloatMenuOption(
-                        "CustomActions.ClearBillStack".Translate(),
-                        () =>
-                            subActions.Add(
-                                new SubAction(
-                                    "CustomActions.MedicalRecipesUtility",
-                                    "ClearBillStack",
-                                    new List<string>(),
-                                    "CustomActions.ClearBillStack".Translate()
+            _result = _result
+                .Concat(
+                    new List<FloatMenuOption>
+                    {
+                        new FloatMenuOption(
+                            "CustomActions.ClearBillStack".Translate(),
+                            () =>
+                                subActions.Add(
+                                    new SubAction(
+                                        "CustomActions.MedicalRecipesUtility",
+                                        "ClearBillStack",
+                                        new List<string>(),
+                                        "CustomActions.ClearBillStack".Translate()
+                                    )
                                 )
-                            )
-                    ),
-                    new FloatMenuOption(
-                        "MedicalOperations".Translate(),
-                        () => Find.WindowStack.Add(new FloatMenu(MedicalRecipeOption))
-                    )
-                }
-            ).ToList();
+                        ),
+                        new FloatMenuOption(
+                            "MedicalOperations".Translate(),
+                            () => Find.WindowStack.Add(new FloatMenu(MedicalRecipeOption))
+                        )
+                    }
+                )
+                .ToList();
             return _result;
         }
 

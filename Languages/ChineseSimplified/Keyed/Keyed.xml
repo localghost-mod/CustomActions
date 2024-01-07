@@ -4,14 +4,17 @@
     <CustomActions.EnableActions>启用操作</CustomActions.EnableActions>
     <CustomActions.NewAction>新操作</CustomActions.NewAction>
     <CustomActions.NameForNewAction>新操作的名称</CustomActions.NameForNewAction>
-    <CustomActions.DoWhen>何时操作</CustomActions.DoWhen>
+    <CustomActions.NewFilter>新过滤器</CustomActions.NewFilter>
+    <CustomActions.OF>介于</CustomActions.OF>
+    <CustomActions.DoWhen>当</CustomActions.DoWhen>
     <CustomActions.Tip1000SecondsInARimworldDay>RimWorld的一天是1000秒。</CustomActions.Tip1000SecondsInARimworldDay>
-    <CustomActions.ActionInterval>间隔</CustomActions.ActionInterval>
-    <CustomActions.EditSubActions>编辑子操作</CustomActions.EditSubActions>
+    <CustomActions.SearchInterval>间隔</CustomActions.SearchInterval>
+    <CustomActions.EditAction>编辑操作</CustomActions.EditAction>
+    <CustomActions.EditFilter>编辑过滤器</CustomActions.EditFilter>
+    <CustomActions.EditSearch>编辑搜索</CustomActions.EditSearch>
     <CustomActions.AddSubAction>添加子操作</CustomActions.AddSubAction>
     <CustomActions.MakeCustomAction>创建自定义操作</CustomActions.MakeCustomAction>
-    <CustomActions.EditingAction>编辑操作</CustomActions.EditingAction>
-    <CustomActions.StartAction>开始操作</CustomActions.StartAction>
+    <CustomActions.Tip0MeansAll>0代表全部</CustomActions.Tip0MeansAll>
 
     <CustomActions.ClearBillStack>清除手术清单</CustomActions.ClearBillStack>
 </LanguageData>

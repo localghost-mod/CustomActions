@@ -24,7 +24,7 @@ namespace CustomActions
             }
         }
 
-        public bool HasSavedAction(string name) => actions.Any(sa => name == sa.search.name);
+        public bool HasSavedAction(string name) => actions.Any(sa => name == sa.name);
 
         public void AddAction(QuerySearch search) => AddAction(new QuerySearchAction(search));
 
@@ -36,8 +36,8 @@ namespace CustomActions
             {
                 QuerySearchAction newSearchAction = new QuerySearchAction(search);
 
-                if (HasSavedAction(newSearchAction.search.name))
-                    newSearchAction.search.name += "TD.CopyNameSuffix".Translate();
+                if (HasSavedAction(newSearchAction.name))
+                    newSearchAction.name += "TD.CopyNameSuffix".Translate();
 
                 actions.Add(newSearchAction);
             }
@@ -47,22 +47,17 @@ namespace CustomActions
         {
             Find.WindowStack.Add(
                 new Dialog_Name(
-                    searchAction.search.name,
-                    name => searchAction.search.name = name,
-                    rejector: name => actions.Any(sa => sa.search.name == name)
+                    searchAction.name,
+                    name => searchAction.name = name,
+                    rejector: name => actions.Any(sa => sa.name == name)
                 )
             );
         }
 
-        public void RemoveAction(QuerySearchAction searchAction)
-        {
-            actions.Remove(searchAction);
-        }
+        public void RemoveAction(QuerySearchAction searchAction) => actions.Remove(searchAction);
 
-        public override void GameComponentTick()
-        {
-            actions.ForEach(searchAction => searchAction.action.DoAction());
-        }
+        public override void GameComponentTick() =>
+            actions.ForEach(searchAction => searchAction.TrySearch());
     }
 
     public class SearchActionGroup : SearchGroupBase<QuerySearchAction>
