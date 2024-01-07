@@ -182,7 +182,7 @@ namespace CustomActions
             row.Checkbox(ref searchAction.action.enabled);
 
             //Show when (backwards right to left O_o)
-            Rect textRect = row.GetRect(36);
+            Rect textRect = row.GetRect(60);
             textRect.height -= 4;
             textRect.width -= 4;
             string dummyStr = null;
