@@ -177,5 +177,30 @@ namespace CustomActions
         {
             LogAllRecipesWithRecord();
         }
+
+        private static List<SubAction> actions;
+
+        public static List<SubAction> Actions()
+        {
+            if (actions == null)
+            {
+                actions = recipesWithPart
+                    .Select(
+                        recipeWithPart =>
+                            new SubAction(
+                                "CustomActions.MedicalRecipesUtility",
+                                "MedicalRecipe",
+                                new List<string>()
+                                {
+                                    recipeWithPart.Item1.defName,
+                                    recipeWithPart.Item2?.Label
+                                },
+                                ToString(recipeWithPart)
+                            )
+                    )
+                    .ToList();
+            }
+            return actions;
+        }
     }
 }

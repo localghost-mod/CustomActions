@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using TD_Find_Lib;
 using Verse;
 
@@ -40,5 +41,39 @@ namespace CustomActions
             Scribe_Values.Look(ref label, "label");
             Scribe_Collections.Look(ref parameters, "parameters", LookMode.Value);
         }
+
+        public static Func<List<SubAction>, List<FloatMenuOption>> Options = subActions =>
+        {
+            var designatorOptions = DesignatorsUtility
+                .Actions()
+                .Select(action => new FloatMenuOption(action.label, () => subActions.Add(action)))
+                .ToList();
+            var medicalRecipeOptions = MedicalRecipesUtility
+                .Actions()
+                .Select(action => new FloatMenuOption(action.label, () => subActions.Add(action)))
+                .ToList();
+            var _result = designatorOptions;
+            _result.Add(
+                new FloatMenuOption(
+                    "MedicalOperations".Translate(),
+                    () => Find.WindowStack.Add(new FloatMenu(medicalRecipeOptions))
+                )
+            );
+            _result.Add(
+                new FloatMenuOption(
+                    "CustomActions.ClearBillStack".Translate(),
+                    () =>
+                        subActions.Add(
+                            new SubAction(
+                                "CustomActions.MedicalRecipesUtility",
+                                "ClearBillStack",
+                                new List<string>(),
+                                "CustomActions.ClearBillStack".Translate()
+                            )
+                        )
+                )
+            );
+            return _result;
+        };
     }
 }

@@ -181,7 +181,6 @@ namespace CustomActions
                 // Buttons
                 DrawRowButtons(row, item, i);
 
-
                 DrawExtraRowRect(rowRect, item, i);
 
                 ReorderableWidget.Reorderable(reorderID, rowRect);
@@ -206,7 +205,7 @@ namespace CustomActions
                 Options.Add(
                     new FloatMenuOption(
                         "CustomActions.AddSubAction".Translate(),
-                        () => Find.WindowStack.Add(new FloatMenu(SubActionOptions(searchAction)))
+                        () => Find.WindowStack.Add(new FloatMenu(SubAction.Options(subActions)))
                     )
                 );
                 Find.WindowStack.Add(new FloatMenu(Options));
@@ -285,82 +284,6 @@ namespace CustomActions
             if (row.ButtonIcon(FindTex.Edit, "CustomActions.EditSearch".Translate()))
                 parent.PopUpEditor(searchAction.Search);
             row.Label("CustomActions.DoWhen".Translate());
-        }
-
-        public List<FloatMenuOption> SubActionOptions(QuerySearchAction searchAction)
-        {
-            var subActions = searchAction.action.subActions;
-            var MedicalRecipeOption = MedicalRecipesUtility
-                .recipesWithPart.Select(
-                    recipeWithPart =>
-                        new FloatMenuOption(
-                            MedicalRecipesUtility.ToString(recipeWithPart),
-                            () =>
-                                subActions.Add(
-                                    new SubAction(
-                                        "CustomActions.MedicalRecipesUtility",
-                                        "MedicalRecipe",
-                                        new List<string>()
-                                        {
-                                            recipeWithPart.Item1.defName,
-                                            recipeWithPart.Item2?.Label
-                                        },
-                                        MedicalRecipesUtility.ToString(recipeWithPart)
-                                    )
-                                )
-                        )
-                )
-                .ToList();
-            var designatorNames = new List<string>
-            {
-                "Harvest",
-                "Mine",
-                "Deconstruct",
-                "HaulThings",
-                "Tame",
-                "Hunt"
-            };
-            var _result = designatorNames
-                .Select(
-                    designatorName =>
-                        new FloatMenuOption(
-                            ("Designator" + designatorName).Translate(),
-                            () =>
-                                subActions.Add(
-                                    new SubAction(
-                                        "CustomActions.DesignatorUtility",
-                                        designatorName,
-                                        new List<string>(),
-                                        ("Designator" + designatorName).Translate()
-                                    )
-                                )
-                        )
-                )
-                .ToList();
-            _result = _result
-                .Concat(
-                    new List<FloatMenuOption>
-                    {
-                        new FloatMenuOption(
-                            "CustomActions.ClearBillStack".Translate(),
-                            () =>
-                                subActions.Add(
-                                    new SubAction(
-                                        "CustomActions.MedicalRecipesUtility",
-                                        "ClearBillStack",
-                                        new List<string>(),
-                                        "CustomActions.ClearBillStack".Translate()
-                                    )
-                                )
-                        ),
-                        new FloatMenuOption(
-                            "MedicalOperations".Translate(),
-                            () => Find.WindowStack.Add(new FloatMenu(MedicalRecipeOption))
-                        )
-                    }
-                )
-                .ToList();
-            return _result;
         }
 
         public static string SymbolFor(CompareType compareType) =>

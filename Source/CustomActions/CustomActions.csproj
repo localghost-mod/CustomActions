@@ -55,7 +55,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="MedicalRecipesUtility.cs" />
-    <Compile Include="DesignatorUtility.cs" />
+    <Compile Include="DesignatorsUtility.cs" />
     <Compile Include="SearchEditorWindow.cs" />
     <Compile Include="ActionsManagerWindow.cs" />
     <Compile Include="Action_QuerySearch.cs" />
