@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using RimWorld;
 using TD_Find_Lib;
-using static HarmonyLib.AccessTools;
 using Verse;
+using static HarmonyLib.AccessTools;
 
 namespace CustomActions
 {
@@ -86,13 +86,23 @@ namespace CustomActions
                     .Invoke(new object[] { });
             return TryDesignate(new List<Designator> { Designator_HaulUrgently });
         }
+
         public static Action<SearchResult, int> FinishOff()
         {
             var Designator_FinishOff = (Designator)
                 TypeByName("AllowTool.Designator_FinishOff")
                     .GetConstructor(new Type[] { })
                     .Invoke(new object[] { });
-            return TryDesignate (new List<Designator> { Designator_FinishOff });
+            return TryDesignate(new List<Designator> { Designator_FinishOff });
+        }
+
+        public static Action<SearchResult, int> CapturePawn()
+        {
+            var Designator_CapturePawn = (Designator)
+                TypeByName("CaptureThem.Designator_CapturePawn")
+                    ?.GetConstructor(new Type[] { })
+                    .Invoke(new object[] { });
+            return TryDesignate(new List<Designator> { Designator_CapturePawn });
         }
 
         private static List<SubAction> actions;
@@ -150,13 +160,25 @@ namespace CustomActions
             if (Designator_FinishOff != null)
                 actions.Add(
                     new SubAction(
-                        "CustomActions.Designator_FinishOff",
+                        "CustomActions.DesignatorsUtility",
                         "FinishOff",
                         new List<string>(),
                         Designator_FinishOff.Label
                     )
                 );
-
+            var Designator_CapturePawn = (Designator)
+                TypeByName("CaptureThem.Designator_CapturePawn")
+                    ?.GetConstructor(new Type[] { })
+                    .Invoke(new object[] { });
+            if (Designator_CapturePawn != null)
+                actions.Add(
+                    new SubAction(
+                        "CustomActions.DesignatorsUtility",
+                        "CapturePawn",
+                        new List<string>(),
+                        Designator_CapturePawn.Label
+                    )
+                );
             return actions;
         }
     }
