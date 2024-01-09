@@ -57,23 +57,6 @@ namespace CustomActions
             if (addRow.ButtonIcon(FindTex.GreyPlus))
                 PopUpCreateAction();
 
-            addRow.ButtonChooseImportSearch(
-                comp.AddAction,
-                SearchActionTransfer.TransferTag,
-                QuerySearch.CloneArgs.use
-            );
-
-            addRow.ButtonChooseImportSearchGroup(
-                comp.AddActions,
-                SearchActionTransfer.TransferTag,
-                QuerySearch.CloneArgs.use
-            );
-
-            addRow.ButtonChooseExportSearchGroup(
-                comp.actions.AsSearchGroup(),
-                SearchActionTransfer.TransferTag
-            );
-
             addRow.ButtonOpenLibrary();
 
             //Check off
@@ -106,10 +89,8 @@ namespace CustomActions
                     {
                         QuerySearchAction searchAction = new QuerySearchAction() { name = name };
                         comp.AddAction(searchAction);
-                        PopUpEditor(searchAction.action.filter);
                     },
-                    "CustomActions.NameForNewAction".Translate(),
-                    name => comp.HasSavedAction(name)
+                    "CustomActions.NameForNewAction".Translate()
                 )
             );
         }
@@ -220,10 +201,16 @@ namespace CustomActions
             string countStr = null;
             Widgets.TextFieldNumeric(textRect, ref searchAction.action.count, ref countStr, 0, 999);
             TooltipHandler.TipRegion(textRect, "CustomActions.Tip0MeansAll".Translate());
+            
             row.Label("CustomActions.OF".Translate());
+
+            row.ButtonChooseImportSearch(
+                search => searchAction.action.filter = search.CloneForUse()
+            );
+
             if (row.ButtonIcon(FindTex.Edit, "CustomActions.EditFilter".Translate()))
                 parent.PopUpEditor(searchAction.action.filter);
-            // Name
+
             row.Label(searchAction.action.filter.name);
         }
 
@@ -278,11 +265,19 @@ namespace CustomActions
                 0,
                 999999
             );
+
             if (row.ButtonText(SymbolFor(searchAction.compareType)))
                 searchAction.compareType = (CompareType)((int)(searchAction.compareType + 1) % 3);
+
             row.Label(searchAction.Search.name);
+
             if (row.ButtonIcon(FindTex.Edit, "CustomActions.EditSearch".Translate()))
                 parent.PopUpEditor(searchAction.Search);
+
+            row.ButtonChooseImportSearch(
+                search => searchAction.search = search.CloneForUse()
+            );
+
             row.Label("CustomActions.DoWhen".Translate());
         }
 

@@ -12,7 +12,7 @@ namespace CustomActions
 
         public string name;
 
-        private QuerySearch search;
+        public QuerySearch search;
         public QuerySearch Search => search;
         public Action_QuerySearch action;
 
