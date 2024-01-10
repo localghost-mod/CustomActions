@@ -41,6 +41,46 @@ namespace CustomActions
             part => part.Label,
             part => part
         );
+        // MedicalRecipesUtility.GetFixedPartsToApplyOn
+        public static IEnumerable<BodyPartRecord> GetFixedPartsToApplyOn(RecipeDef recipe)
+        {
+            int num;
+            for (int i = 0; i < recipe.appliedOnFixedBodyParts.Count; i = num)
+            {
+                BodyPartDef part = recipe.appliedOnFixedBodyParts[i];
+                List<BodyPartRecord> bpList = allParts;
+                for (int j = 0; j < bpList.Count; j = num + 1)
+                {
+                    BodyPartRecord bodyPartRecord = bpList[j];
+                    if (bodyPartRecord.def == part)
+                    {
+                        yield return bodyPartRecord;
+                    }
+                    num = j;
+                }
+                part = null;
+                bpList = null;
+                num = i + 1;
+            }
+            for (int i = 0; i < recipe.appliedOnFixedBodyPartGroups.Count; i = num)
+            {
+                BodyPartGroupDef group = recipe.appliedOnFixedBodyPartGroups[i];
+                List<BodyPartRecord> bpList = allParts;
+                for (int j = 0; j < bpList.Count; j = num + 1)
+                {
+                    BodyPartRecord bodyPartRecord2 = bpList[j];
+                    if (bodyPartRecord2.groups != null && bodyPartRecord2.groups.Contains(group))
+                    {
+                        yield return bodyPartRecord2;
+                    }
+                    num = j;
+                }
+                group = null;
+                bpList = null;
+                num = i + 1;
+            }
+            yield break;
+        }
         public static List<Tuple<RecipeDef, BodyPartRecord>> _recipesWithPart;
         public static List<Tuple<RecipeDef, BodyPartRecord>> recipesWithPart
         {
@@ -49,62 +89,26 @@ namespace CustomActions
                 if (_recipesWithPart == null)
                 {
                     _recipesWithPart = new List<Tuple<RecipeDef, BodyPartRecord>>();
-                    // RimWorld.MedicalRecipesUtility
-                    // handle the recipe with appliedOnFixedBodyParts or appliedOnFixedBodyPartGroups
-                    var recordOnPart = new Dictionary<BodyPartDef, List<BodyPartRecord>>();
-                    allParts.ForEach(
-                        record => recordOnPart.SetOrAdd(record.def, new List<BodyPartRecord>())
-                    );
-                    allParts.ForEach(record => recordOnPart[record.def].Add(record));
-
-                    var recordInGroup = new Dictionary<BodyPartGroupDef, List<BodyPartRecord>>();
-                    allParts.ForEach(
-                        record =>
-                            record.groups.ForEach(
-                                group => recordInGroup.SetOrAdd(group, new List<BodyPartRecord>())
-                            )
-                    );
-                    allParts.ForEach(
-                        record => record.groups.ForEach(group => recordInGroup[group].Add(record))
-                    );
-
                     foreach (var recipe in recipes)
                     {
-                        recipe.appliedOnFixedBodyParts.ForEach(
-                            bodypart =>
-                                recordOnPart[bodypart].ForEach(
-                                    record =>
-                                        _recipesWithPart.Add(
-                                            new Tuple<RecipeDef, BodyPartRecord>(recipe, record)
-                                        )
-                                )
-                        );
-                        recipe.appliedOnFixedBodyPartGroups.ForEach(
-                            group =>
-                                recordInGroup[group].ForEach(
-                                    record =>
-                                        _recipesWithPart.Add(
-                                            new Tuple<RecipeDef, BodyPartRecord>(recipe, record)
-                                        )
-                                )
-                        );
-                        if (
-                            recipe.appliedOnFixedBodyParts.NullOrEmpty()
-                            && recipe.appliedOnFixedBodyPartGroups.NullOrEmpty()
-                        )
+                        if (recipe.targetsBodyPart)
                         {
                             if (recipe.workerClass == typeof(Recipe_RemoveBodyPart))
-                                allParts.ForEach(
-                                    record =>
-                                        _recipesWithPart.Add(
-                                            new Tuple<RecipeDef, BodyPartRecord>(recipe, record)
-                                        )
-                                );
+                                foreach (var part in allParts)
+                                    _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, part));
+                            else if (recipe.workerClass == typeof(Recipe_RemoveImplant))
+                            {
+                                var installImplant = recipes.First(install => install.addsHediff == recipe.removesHediff);
+                                foreach (var part in GetFixedPartsToApplyOn(installImplant))
+                                    _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, part));
+                            }
                             else
-                                _recipesWithPart.Add(
-                                    new Tuple<RecipeDef, BodyPartRecord>(recipe, null)
-                                );
+                                foreach (var part in GetFixedPartsToApplyOn(recipe))
+                                _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, part));
+
                         }
+                        else
+                            _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, null));
                     }
                 }
                 return _recipesWithPart;
@@ -123,12 +127,6 @@ namespace CustomActions
                         var pawn = thing as Pawn;
                         if (pawn != null)
                         {
-                            // check if the pawn has the part
-                            if (
-                                part != null
-                                && !pawn.health.hediffSet.GetNotMissingParts().Contains(part)
-                            )
-                                return;
                             // check if has the same recipe
                             if (
                                 pawn.BillStack.Bills.Any(
@@ -138,15 +136,26 @@ namespace CustomActions
                                 )
                             )
                                 return;
-                            // check if the hediff exists
-                            if (
-                                recipe.addsHediff != null
-                                && pawn.health.hediffSet.HasHediff(recipe.addsHediff)
-                            )
-                                return;
-                            var bill = new Bill_Medical(recipe, null);
-                            bill.Part = part;
-                            pawn.BillStack.AddBill(bill);
+                            // HealthCardUtility.DrawMedOperationsTab
+                            var report = recipe.Worker.AvailableReport(pawn);
+                            if (report.Accepted || !report.Reason.NullOrEmpty())
+                            {
+                                if (recipe.targetsBodyPart)
+                                {
+                                    if (recipe.Worker.GetPartsToApplyOn(pawn, recipe).Contains(part))
+                                        if (recipe.AvailableOnNow(pawn, part))
+                                        {
+                                            var bill = new Bill_Medical(recipe, null);
+                                            bill.Part = part;
+                                            pawn.BillStack.AddBill(bill);
+                                        }
+                                }
+                                else
+                                {
+                                    var bill = new Bill_Medical(recipe, null);
+                                    pawn.BillStack.AddBill(bill);
+                                }
+                            }
                         }
                     });
         }
