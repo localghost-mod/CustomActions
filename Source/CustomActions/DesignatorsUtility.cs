@@ -31,6 +31,9 @@ namespace CustomActions
                     );
         }
 
+        public static Action<SearchResult, int> TryDesignate(Designator designator) =>
+            TryDesignate(new List<Designator> { designator });
+
         public static Action<SearchResult, int> Harvest() =>
             TryDesignate(
                 new List<Designator>
@@ -41,42 +44,25 @@ namespace CustomActions
             );
 
         public static Action<SearchResult, int> Mine() =>
-            TryDesignate(
-                new List<Designator> { Find.ReverseDesignatorDatabase.Get<Designator_Mine>() }
-            );
+            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Mine>());
 
         public static Action<SearchResult, int> Deconstruct() =>
-            TryDesignate(
-                new List<Designator>
-                {
-                    Find.ReverseDesignatorDatabase.Get<Designator_Deconstruct>()
-                }
-            );
+            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Deconstruct>());
 
         public static Action<SearchResult, int> HaulThings() =>
-            TryDesignate(
-                new List<Designator> { Find.ReverseDesignatorDatabase.Get<Designator_Haul>() }
-            );
+            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Haul>());
 
         public static Action<SearchResult, int> Tame() =>
-            TryDesignate(
-                new List<Designator> { Find.ReverseDesignatorDatabase.Get<Designator_Tame>() }
-            );
+            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Tame>());
 
         public static Action<SearchResult, int> Hunt() =>
-            TryDesignate(
-                new List<Designator> { Find.ReverseDesignatorDatabase.Get<Designator_Hunt>() }
-            );
+            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Hunt>());
 
         public static Action<SearchResult, int> Strip() =>
-            TryDesignate(
-                new List<Designator> { Find.ReverseDesignatorDatabase.Get<Designator_Strip>() }
-            );
+            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Strip>());
 
         public static Action<SearchResult, int> Cancel() =>
-            TryDesignate(
-                new List<Designator> { Find.ReverseDesignatorDatabase.Get<Designator_Cancel>() }
-            );
+            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Cancel>());
 
         public static Action<SearchResult, int> HaulUrgently()
         {
@@ -84,7 +70,7 @@ namespace CustomActions
                 TypeByName("AllowTool.Designator_HaulUrgently")
                     .GetConstructor(new Type[] { })
                     .Invoke(new object[] { });
-            return TryDesignate(new List<Designator> { Designator_HaulUrgently });
+            return TryDesignate(Designator_HaulUrgently);
         }
 
         public static Action<SearchResult, int> FinishOff()
@@ -93,7 +79,7 @@ namespace CustomActions
                 TypeByName("AllowTool.Designator_FinishOff")
                     .GetConstructor(new Type[] { })
                     .Invoke(new object[] { });
-            return TryDesignate(new List<Designator> { Designator_FinishOff });
+            return TryDesignate(Designator_FinishOff);
         }
 
         public static Action<SearchResult, int> CapturePawn()
@@ -102,7 +88,16 @@ namespace CustomActions
                 TypeByName("CaptureThem.Designator_CapturePawn")
                     ?.GetConstructor(new Type[] { })
                     .Invoke(new object[] { });
-            return TryDesignate(new List<Designator> { Designator_CapturePawn });
+            return TryDesignate(Designator_CapturePawn);
+        }
+
+        public static Action<SearchResult, int> IncreaseQuality()
+        {
+            var Designator_IncreaseQuality = (Designator)
+                TypeByName("EasyUpgrades.Designator_IncreaseQuality")
+                    ?.GetConstructor(new Type[] { })
+                    .Invoke(new object[] { });
+            return TryDesignate(Designator_IncreaseQuality);
         }
 
         private static List<SubAction> actions;
@@ -177,6 +172,19 @@ namespace CustomActions
                         "CapturePawn",
                         new List<string>(),
                         Designator_CapturePawn.Label
+                    )
+                );
+            var Designator_IncreaseQuality = (Designator)
+                TypeByName("EasyUpgrades.Designator_IncreaseQuality")
+                    ?.GetConstructor(new Type[] { })
+                    .Invoke(new object[] { });
+            if (Designator_IncreaseQuality != null)
+                actions.Add(
+                    new SubAction(
+                        "CustomActions.DesignatorsUtility",
+                        "IncreaseQuality",
+                        new List<string>(),
+                        Designator_IncreaseQuality.Label
                     )
                 );
             return actions;

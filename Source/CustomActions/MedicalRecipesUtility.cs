@@ -41,6 +41,7 @@ namespace CustomActions
             part => part.Label,
             part => part
         );
+
         // MedicalRecipesUtility.GetFixedPartsToApplyOn
         public static IEnumerable<BodyPartRecord> GetFixedPartsToApplyOn(RecipeDef recipe)
         {
@@ -81,6 +82,7 @@ namespace CustomActions
             }
             yield break;
         }
+
         public static List<Tuple<RecipeDef, BodyPartRecord>> _recipesWithPart;
         public static List<Tuple<RecipeDef, BodyPartRecord>> recipesWithPart
         {
@@ -95,20 +97,29 @@ namespace CustomActions
                         {
                             if (recipe.workerClass == typeof(Recipe_RemoveBodyPart))
                                 foreach (var part in allParts)
-                                    _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, part));
+                                    _recipesWithPart.Add(
+                                        new Tuple<RecipeDef, BodyPartRecord>(recipe, part)
+                                    );
                             else if (recipe.workerClass == typeof(Recipe_RemoveImplant))
                             {
-                                var installImplant = recipes.First(install => install.addsHediff == recipe.removesHediff);
+                                var installImplant = recipes.First(
+                                    install => install.addsHediff == recipe.removesHediff
+                                );
                                 foreach (var part in GetFixedPartsToApplyOn(installImplant))
-                                    _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, part));
+                                    _recipesWithPart.Add(
+                                        new Tuple<RecipeDef, BodyPartRecord>(recipe, part)
+                                    );
                             }
                             else
                                 foreach (var part in GetFixedPartsToApplyOn(recipe))
-                                _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, part));
-
+                                    _recipesWithPart.Add(
+                                        new Tuple<RecipeDef, BodyPartRecord>(recipe, part)
+                                    );
                         }
                         else
-                            _recipesWithPart.Add(new Tuple<RecipeDef, BodyPartRecord>(recipe, null));
+                            _recipesWithPart.Add(
+                                new Tuple<RecipeDef, BodyPartRecord>(recipe, null)
+                            );
                     }
                 }
                 return _recipesWithPart;
@@ -142,13 +153,18 @@ namespace CustomActions
                             {
                                 if (recipe.targetsBodyPart)
                                 {
-                                    if (recipe.Worker.GetPartsToApplyOn(pawn, recipe).Contains(part))
-                                        if (recipe.AvailableOnNow(pawn, part))
+                                    var _part = recipe
+                                        .Worker.GetPartsToApplyOn(pawn, recipe)
+                                        .FirstOrFallback(p => p.Label == part.Label);
+                                    if (_part != null)
+                                    {
+                                        if (recipe.AvailableOnNow(pawn, _part))
                                         {
                                             var bill = new Bill_Medical(recipe, null);
-                                            bill.Part = part;
+                                            bill.Part = _part;
                                             pawn.BillStack.AddBill(bill);
                                         }
+                                    }
                                 }
                                 else
                                 {
@@ -174,17 +190,6 @@ namespace CustomActions
                 return recipeWithPart.Item1.label;
             else
                 return recipeWithPart.Item1.label + "(" + recipeWithPart.Item2?.Label + ")";
-        }
-
-        public static void LogAllRecipesWithRecord()
-        {
-            foreach (var recipeWithPart in recipesWithPart)
-                Log.Message(ToString(recipeWithPart));
-        }
-
-        public static void LogAll()
-        {
-            LogAllRecipesWithRecord();
         }
 
         private static List<SubAction> actions;

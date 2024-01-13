@@ -22,7 +22,7 @@
 	</modDependencies>
 	<description></description>
 	<loadAfter>
+		<li>brrainz.harmony</li>
 		<li>Uuugggg.TDFindLib</li>
-		<li>unlimitedhugs.allowtool</li>
 	</loadAfter>
 </ModMetaData>
