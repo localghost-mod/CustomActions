@@ -1,4 +1,5 @@
-﻿using TD_Find_Lib;
+﻿using System.Reflection;
+using TD_Find_Lib;
 using Verse;
 
 namespace CustomActions
@@ -11,6 +12,16 @@ namespace CustomActions
             title = "TD.Editing".Translate();
             showNameAfterTitle = true;
         }
-        public override void Import(QuerySearch newSearch) => search = newSearch.CloneForUse();
+
+        public override void Import(QuerySearch newSearch)
+        {
+            search.name = newSearch.name;
+            search.parameters = newSearch.parameters.Clone();
+            FieldInfo info = typeof(QuerySearch).GetField(
+                "children",
+                BindingFlags.NonPublic | BindingFlags.Instance
+            );
+            info.SetValue(search, newSearch.Children);
+        }
     }
 }
