@@ -1,20 +1,22 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <LanguageData>
     <CustomActions.CustomActions>Custom Actions</CustomActions.CustomActions>
-    <CustomActions.EnableActions>Enable Actions</CustomActions.EnableActions>
+    <CustomActions.SummaryTrigger>when the count of {0} {1} {2}</CustomActions.SummaryTrigger>
+    <CustomActions.Summary>first {0} {1}</CustomActions.Summary>
+    <CustomActions.SummaryAll>all of {0}</CustomActions.SummaryAll>
+    <CustomActions.Filter>Filter</CustomActions.Filter>
+    <CustomActions.Count>count</CustomActions.Count>
+    <CustomActions.Trigger>Trigger</CustomActions.Trigger>
+    <CustomActions.SearchInterval>search interval</CustomActions.SearchInterval>
+    <CustomActions.SubActions>Sub-actions</CustomActions.SubActions>
+    <CustomActions.AddSubAction>Add Sub-actions</CustomActions.AddSubAction>
+    <CustomActions.NoSubActions>No Sub-actions</CustomActions.NoSubActions>
+    <CustomActions.ListSubAction>({0})</CustomActions.ListSubAction>
+    <CustomActions.ListSubActions>({0} and the other {1} sub-actions)</CustomActions.ListSubActions>
     <CustomActions.NewAction>New Action</CustomActions.NewAction>
     <CustomActions.NameForNewAction>Name for New Action</CustomActions.NameForNewAction>
     <CustomActions.NewFilter>New Filter</CustomActions.NewFilter>
-    <CustomActions.OF>of</CustomActions.OF>
-    <CustomActions.DoWhen>Do When</CustomActions.DoWhen>
-    <CustomActions.Tip1000SecondsInARimworldDay>1000 seconds in a RimWorld day</CustomActions.Tip1000SecondsInARimworldDay>
-    <CustomActions.SearchInterval>Interval</CustomActions.SearchInterval>
-    <CustomActions.EditAction>Edit Action</CustomActions.EditAction>
-    <CustomActions.EditFilter>Edit Filter</CustomActions.EditFilter>
-    <CustomActions.EditSearch>Edit Search</CustomActions.EditSearch>
-    <CustomActions.AddSubAction>Add Sub-action</CustomActions.AddSubAction>
-    <CustomActions.MakeCustomAction>Make Custom Action</CustomActions.MakeCustomAction>
-    <CustomActions.Tip0MeansAll>0 means all</CustomActions.Tip0MeansAll>
+    <CustomActions.NewTrigger>New Trigger</CustomActions.NewTrigger>
 
     <CustomActions.ClearBillStack>Clear Pawn's Billstack</CustomActions.ClearBillStack>
 </LanguageData>

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using RimWorld;
+using System.Reflection;
+using System.Reflection.Emit;
+using HarmonyLib;
 using TD_Find_Lib;
+using UnityEngine;
 using Verse;
 using static HarmonyLib.AccessTools;
 
@@ -10,184 +13,82 @@ namespace CustomActions
 {
     public static class ListExtension
     {
-        public static List<Thing> FirstOrAll(this List<Thing> list, int count) =>
-            count == 0 ? list : list.Take(count).ToList();
+        public static List<Thing> FirstOrAll(this List<Thing> list, int count) => count == 0 ? list : list.Take(count).ToList();
     }
 
     public static class DesignatorsUtility
     {
-        public static Action<SearchResult, int> TryDesignate(List<Designator> designators)
-        {
-            return (result, count) =>
+        public static Dictionary<string, Designator> _getDesignator = new Dictionary<string, Designator>();
+
+        public static Designator GetDesignator(string name) =>
+            _getDesignator.ContainsKey(name)
+                ? _getDesignator[name]
+                : (
+                    _getDesignator[name] =
+                        TypeByName(name) == null
+                            ? null
+                            : (Designator)Method("Verse.ReverseDesignatorDatabase:Get", generics: new[] { TypeByName(name) }).Invoke(Find.ReverseDesignatorDatabase, null)
+                );
+
+        public static Action<SearchResult, int> TryDesignate(string name) =>
+            (result, count) =>
                 result
                     .allThings.FirstOrAll(count)
-                    .ForEach(
-                        thing =>
-                            designators.ForEach(designator =>
-                            {
-                                if (designator.CanDesignateThing(thing))
-                                    designator.DesignateThing(thing);
-                            })
-                    );
-        }
+                    .Where(thing => GetDesignator(name).CanDesignateThing(thing))
+                    .ToList()
+                    .ForEach(thing => GetDesignator(name).DesignateThing(thing));
 
-        public static Action<SearchResult, int> TryDesignate(Designator designator) =>
-            TryDesignate(new List<Designator> { designator });
+        private static IEnumerable<SubAction> actions;
 
-        public static Action<SearchResult, int> Harvest() =>
-            TryDesignate(
-                new List<Designator>
-                {
-                    Find.ReverseDesignatorDatabase.Get<Designator_PlantsHarvest>(),
-                    Find.ReverseDesignatorDatabase.Get<Designator_PlantsHarvestWood>()
-                }
+        public static IEnumerable<SubAction> Actions =>
+            actions
+            ?? (
+                actions = DesignatorNames
+                    .Where(name => GetDesignator(name) != null)
+                    .Select(name => new SubAction("CustomActions.DesignatorsUtility:TryDesignate", GetDesignator(name).LabelCap, new List<string> { name }))
             );
 
-        public static Action<SearchResult, int> Mine() =>
-            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Mine>());
+        public static List<string> DesignatorNames =>
+            new List<string>
+            {
+                "RimWorld.Designator_PlantsHarvest",
+                "RimWorld.Designator_PlantsHarvestWood",
+                "RimWorld.Designator_Mine",
+                "RimWorld.Designator_Deconstruct",
+                "RimWorld.Designator_Haul",
+                "RimWorld.Designator_Tame",
+                "RimWorld.Designator_Hunt",
+                "RimWorld.Designator_Strip",
+                "RimWorld.Designator_Cancel",
+                "AllowTool.Designator_HaulUrgently",
+                "AllowTool.Designator_FinishOff",
+                "CaptureThem.Designator_CapturePawn",
+                "EasyUpgrades.Designator_IncreaseQuality"
+            };
+        public static Func<List<SubAction>, IEnumerable<FloatMenuOption>> Options = subActions =>
+            Actions.Select(action => new FloatMenuOption(action.label, () => subActions.Add(action)));
+    }
 
-        public static Action<SearchResult, int> Deconstruct() =>
-            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Deconstruct>());
-
-        public static Action<SearchResult, int> HaulThings() =>
-            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Haul>());
-
-        public static Action<SearchResult, int> Tame() =>
-            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Tame>());
-
-        public static Action<SearchResult, int> Hunt() =>
-            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Hunt>());
-
-        public static Action<SearchResult, int> Strip() =>
-            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Strip>());
-
-        public static Action<SearchResult, int> Cancel() =>
-            TryDesignate(Find.ReverseDesignatorDatabase.Get<Designator_Cancel>());
-
-        public static Action<SearchResult, int> HaulUrgently()
+    [StaticConstructorOnStartup]
+    static class Startup
+    {
+        static Startup()
         {
-            var Designator_HaulUrgently = (Designator)
-                TypeByName("AllowTool.Designator_HaulUrgently")
-                    .GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            return TryDesignate(Designator_HaulUrgently);
+            var harmony = new Harmony("localghost.customactions");
+            var transpiler = new HarmonyMethod(Method("CustomActions.Startup:Transpiler"));
+            harmony.Patch(typeof(ContentFinder<Texture2D>).GetMethod("Get"), transpiler: transpiler);
+            harmony.Patch(Method("Verse.MaterialPool:MatFrom", new[] { typeof(MaterialRequest) }), transpiler: transpiler);
         }
 
-        public static Action<SearchResult, int> FinishOff()
+        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
         {
-            var Designator_FinishOff = (Designator)
-                TypeByName("AllowTool.Designator_FinishOff")
-                    .GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            return TryDesignate(Designator_FinishOff);
-        }
-
-        public static Action<SearchResult, int> CapturePawn()
-        {
-            var Designator_CapturePawn = (Designator)
-                TypeByName("CaptureThem.Designator_CapturePawn")
-                    ?.GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            return TryDesignate(Designator_CapturePawn);
-        }
-
-        public static Action<SearchResult, int> IncreaseQuality()
-        {
-            var Designator_IncreaseQuality = (Designator)
-                TypeByName("EasyUpgrades.Designator_IncreaseQuality")
-                    ?.GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            return TryDesignate(Designator_IncreaseQuality);
-        }
-
-        private static List<SubAction> actions;
-
-        public static List<SubAction> Actions()
-        {
-            if (actions == null)
-                actions = new List<string>
-                {
-                    "Harvest",
-                    "Mine",
-                    "Deconstruct",
-                    "HaulThings",
-                    "Tame",
-                    "Hunt",
-                    "Strip",
-                    "Cancel"
-                }
-                    .Select(
-                        designatorName =>
-                            new SubAction(
-                                "CustomActions.DesignatorsUtility",
-                                designatorName,
-                                new List<string>(),
-                                ("Designator" + designatorName).Translate()
-                            )
-                    )
-                    .Concat(ModActions())
-                    .ToList();
-            return actions;
-        }
-
-        public static List<SubAction> ModActions()
-        {
-            var actions = new List<SubAction>();
-
-            var Designator_HaulUrgently = (Designator)
-                TypeByName("AllowTool.Designator_HaulUrgently")
-                    ?.GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            if (Designator_HaulUrgently != null)
-                actions.Add(
-                    new SubAction(
-                        "CustomActions.DesignatorsUtility",
-                        "HaulUrgently",
-                        new List<string>(),
-                        Designator_HaulUrgently.Label
-                    )
-                );
-
-            var Designator_FinishOff = (Designator)
-                TypeByName("AllowTool.Designator_FinishOff")
-                    ?.GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            if (Designator_FinishOff != null)
-                actions.Add(
-                    new SubAction(
-                        "CustomActions.DesignatorsUtility",
-                        "FinishOff",
-                        new List<string>(),
-                        Designator_FinishOff.Label
-                    )
-                );
-            var Designator_CapturePawn = (Designator)
-                TypeByName("CaptureThem.Designator_CapturePawn")
-                    ?.GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            if (Designator_CapturePawn != null)
-                actions.Add(
-                    new SubAction(
-                        "CustomActions.DesignatorsUtility",
-                        "CapturePawn",
-                        new List<string>(),
-                        Designator_CapturePawn.Label
-                    )
-                );
-            var Designator_IncreaseQuality = (Designator)
-                TypeByName("EasyUpgrades.Designator_IncreaseQuality")
-                    ?.GetConstructor(new Type[] { })
-                    .Invoke(new object[] { });
-            if (Designator_IncreaseQuality != null)
-                actions.Add(
-                    new SubAction(
-                        "CustomActions.DesignatorsUtility",
-                        "IncreaseQuality",
-                        new List<string>(),
-                        Designator_IncreaseQuality.Label
-                    )
-                );
-            return actions;
+            foreach (var instruction in instructions)
+            {
+                if (instruction.opcode == OpCodes.Call && (MethodInfo)instruction.operand == Method("Verse.Log:Error", new[] { typeof(string) }))
+                    yield return new CodeInstruction(OpCodes.Call, Method("Verse.Log:Message", new[] { typeof(string) }));
+                else
+                    yield return instruction;
+            }
         }
     }
 }

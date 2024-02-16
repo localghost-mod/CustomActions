@@ -1,4 +1,4 @@
-﻿using System.Reflection;
+﻿using HarmonyLib;
 using TD_Find_Lib;
 using Verse;
 
@@ -7,7 +7,7 @@ namespace CustomActions
     class SearchEditorWindow : TD_Find_Lib.SearchEditorWindow
     {
         public SearchEditorWindow(QuerySearch search)
-            : base(search, SearchActionTransfer.TransferTag)
+            : base(search, null)
         {
             title = "TD.Editing".Translate();
             showNameAfterTitle = true;
@@ -15,13 +15,9 @@ namespace CustomActions
 
         public override void Import(QuerySearch newSearch)
         {
-            search.name = newSearch.name;
-            search.parameters = newSearch.parameters.Clone();
-            FieldInfo info = typeof(QuerySearch).GetField(
-                "children",
-                BindingFlags.NonPublic | BindingFlags.Instance
-            );
-            info.SetValue(search, newSearch.Children);
+            Search.name = newSearch.name;
+            Search.parameters = newSearch.parameters.Clone();
+            Traverse.Create(filter).Field("children").SetValue(newSearch.Children);
         }
     }
 }

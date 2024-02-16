@@ -58,7 +58,7 @@
     <Compile Include="DesignatorsUtility.cs" />
     <Compile Include="SearchEditorWindow.cs" />
     <Compile Include="ActionsManagerWindow.cs" />
-    <Compile Include="Action_QuerySearch.cs" />
+    <Compile Include="QueryAction.cs" />
     <Compile Include="CustomActionsGameComp.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="SubAction.cs" />

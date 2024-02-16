@@ -28,193 +28,127 @@ namespace CustomActions
                     typeof(Recipe_TerminatePregnancy),
                 };
         */
-        public static IEnumerable<RecipeDef> recipes =
-            DefDatabase<RecipeDef>.AllDefsListForReading.Where(
-                recipe => recipe.workerClass.IsSubclassOf(typeof(Recipe_Surgery))
-            );
-        public static Dictionary<string, RecipeDef> getRecipeByName = recipes.ToDictionary(
-            recipe => recipe.defName,
-            recipe => recipe
-        );
-        public static List<BodyPartRecord> allParts = BodyDefOf.Human.AllParts;
-        public static Dictionary<string, BodyPartRecord> getPartByName = allParts.ToDictionary(
-            part => part.Label,
-            part => part
-        );
+        public static IEnumerable<RecipeDef> _recipes;
+        public static IEnumerable<RecipeDef> Recipes =>
+            _recipes ?? (_recipes = DefDatabase<RecipeDef>.AllDefsListForReading.Where(recipe => recipe.workerClass.IsSubclassOf(typeof(Recipe_Surgery))));
+        private static List<BodyPartRecord> _allParts;
+        public static List<BodyPartRecord> AllPart =>
+            _allParts ?? (_allParts = DefDatabase<BodyDef>.AllDefs.Select(def => def.AllParts).SelectMany(x => x).GroupBy(part => part.Label).Select(x => x.First()).ToList());
+
+        private static Dictionary<RecipeDef, IEnumerable<BodyPartRecord>> _bodyparts = new Dictionary<RecipeDef, IEnumerable<BodyPartRecord>>();
 
         // MedicalRecipesUtility.GetFixedPartsToApplyOn
         public static IEnumerable<BodyPartRecord> GetFixedPartsToApplyOn(RecipeDef recipe)
         {
-            int num;
-            for (int i = 0; i < recipe.appliedOnFixedBodyParts.Count; i = num)
+            if (!_bodyparts.ContainsKey(recipe))
             {
-                BodyPartDef part = recipe.appliedOnFixedBodyParts[i];
-                List<BodyPartRecord> bpList = allParts;
-                for (int j = 0; j < bpList.Count; j = num + 1)
+                if (recipe.targetsBodyPart)
                 {
-                    BodyPartRecord bodyPartRecord = bpList[j];
-                    if (bodyPartRecord.def == part)
+                    if (recipe.workerClass == typeof(Recipe_RemoveBodyPart))
+                        _bodyparts[recipe] = AllPart;
+                    else if (recipe.workerClass == typeof(Recipe_RemoveImplant))
                     {
-                        yield return bodyPartRecord;
+                        var installImplant = Recipes.First(install => install.addsHediff == recipe.removesHediff);
+                        _bodyparts[recipe] = GetFixedPartsToApplyOn(installImplant);
                     }
-                    num = j;
-                }
-                part = null;
-                bpList = null;
-                num = i + 1;
-            }
-            for (int i = 0; i < recipe.appliedOnFixedBodyPartGroups.Count; i = num)
-            {
-                BodyPartGroupDef group = recipe.appliedOnFixedBodyPartGroups[i];
-                List<BodyPartRecord> bpList = allParts;
-                for (int j = 0; j < bpList.Count; j = num + 1)
-                {
-                    BodyPartRecord bodyPartRecord2 = bpList[j];
-                    if (bodyPartRecord2.groups != null && bodyPartRecord2.groups.Contains(group))
+                    else
                     {
-                        yield return bodyPartRecord2;
-                    }
-                    num = j;
-                }
-                group = null;
-                bpList = null;
-                num = i + 1;
-            }
-            yield break;
-        }
-
-        public static List<Tuple<RecipeDef, BodyPartRecord>> _recipesWithPart;
-        public static List<Tuple<RecipeDef, BodyPartRecord>> recipesWithPart
-        {
-            get
-            {
-                if (_recipesWithPart == null)
-                {
-                    _recipesWithPart = new List<Tuple<RecipeDef, BodyPartRecord>>();
-                    foreach (var recipe in recipes)
-                    {
-                        if (recipe.targetsBodyPart)
-                        {
-                            if (recipe.workerClass == typeof(Recipe_RemoveBodyPart))
-                                foreach (var part in allParts)
-                                    _recipesWithPart.Add(
-                                        new Tuple<RecipeDef, BodyPartRecord>(recipe, part)
-                                    );
-                            else if (recipe.workerClass == typeof(Recipe_RemoveImplant))
-                            {
-                                var installImplant = recipes.First(
-                                    install => install.addsHediff == recipe.removesHediff
-                                );
-                                foreach (var part in GetFixedPartsToApplyOn(installImplant))
-                                    _recipesWithPart.Add(
-                                        new Tuple<RecipeDef, BodyPartRecord>(recipe, part)
-                                    );
-                            }
-                            else
-                                foreach (var part in GetFixedPartsToApplyOn(recipe))
-                                    _recipesWithPart.Add(
-                                        new Tuple<RecipeDef, BodyPartRecord>(recipe, part)
-                                    );
-                        }
+                        if (!recipe.appliedOnFixedBodyParts.NullOrEmpty())
+                            _bodyparts[recipe] = recipe.appliedOnFixedBodyParts.Select(part => AllPart.Where(record => record.def == part)).SelectMany(x => x);
+                        else if (!recipe.appliedOnFixedBodyPartGroups.NullOrEmpty())
+                            _bodyparts[recipe] = recipe
+                                .appliedOnFixedBodyPartGroups.Select(group => AllPart.Where(record => record.groups?.Contains(group) ?? false))
+                                .SelectMany(x => x);
                         else
-                            _recipesWithPart.Add(
-                                new Tuple<RecipeDef, BodyPartRecord>(recipe, null)
-                            );
+                            _bodyparts[recipe] = AllPart;
                     }
                 }
-                return _recipesWithPart;
+                else
+                    _bodyparts[recipe] = new List<BodyPartRecord> { null };
             }
+            return _bodyparts[recipe];
         }
 
         public static Action<SearchResult, int> MedicalRecipe(string recipeName, string partName)
         {
-            var recipe = getRecipeByName[recipeName];
-            var part = partName == null ? null : getPartByName[partName];
+            var recipe = DefDatabase<RecipeDef>.GetNamed(recipeName);
             return (result, count) =>
                 result
                     .allThings.FirstOrAll(count)
                     .ForEach(thing =>
                     {
-                        var pawn = thing as Pawn;
-                        if (pawn != null)
+                        if (thing is Pawn pawn && pawn.BillStack.Bills.All(bill => bill.recipe != recipe || (bill as Bill_Medical)?.Part?.Label != partName))
                         {
-                            // check if has the same recipe
-                            if (
-                                pawn.BillStack.Bills.Any(
-                                    _bill =>
-                                        _bill.recipe == recipe
-                                        && (_bill as Bill_Medical)?.Part == part
-                                )
-                            )
-                                return;
-                            // HealthCardUtility.DrawMedOperationsTab
-                            var report = recipe.Worker.AvailableReport(pawn);
-                            if (report.Accepted || !report.Reason.NullOrEmpty())
+                            var parts = recipe.Worker.GetPartsToApplyOn(pawn, recipe);
+                            var part = parts.FirstOrFallback(_part => _part.Label == partName);
+                            if (recipe.Worker.AvailableReport(pawn, part))
                             {
+                                // HealthCardUtility.DrawMedOperationsTab
                                 if (recipe.targetsBodyPart)
                                 {
-                                    var _part = recipe
-                                        .Worker.GetPartsToApplyOn(pawn, recipe)
-                                        .FirstOrFallback(p => p.Label == part.Label);
-                                    if (_part != null)
-                                    {
-                                        if (recipe.AvailableOnNow(pawn, _part))
-                                        {
-                                            var bill = new Bill_Medical(recipe, null);
-                                            bill.Part = _part;
-                                            pawn.BillStack.AddBill(bill);
-                                        }
-                                    }
+                                    if (part != null)
+                                        pawn.BillStack.AddBill(new Bill_Medical(recipe, null) { Part = part });
                                 }
                                 else
-                                {
-                                    var bill = new Bill_Medical(recipe, null);
-                                    pawn.BillStack.AddBill(bill);
-                                }
+                                    pawn.BillStack.AddBill(new Bill_Medical(recipe, null));
                             }
                         }
                     });
         }
 
-        public static Action<SearchResult, int> ClearBillStack()
-        {
-            return (result, count) =>
-                result
-                    .allThings.FirstOrAll(count)
-                    .ForEach(thing => (thing as Pawn)?.BillStack.Clear());
-        }
+        public static Action<SearchResult, int> ClearBillStack() => (result, count) => result.allThings.FirstOrAll(count).ForEach(thing => (thing as Pawn)?.BillStack.Clear());
 
-        public static string ToString(Tuple<RecipeDef, BodyPartRecord> recipeWithPart)
-        {
-            if (recipeWithPart.Item2 == null)
-                return recipeWithPart.Item1.label;
-            else
-                return recipeWithPart.Item1.label + "(" + recipeWithPart.Item2?.Label + ")";
-        }
+        public static string ToString(RecipeDef recipe, BodyPartRecord record) => _bodyparts[recipe].Count() == 1 ? recipe.label : $"{recipe.label} ({record.Label})";
 
-        private static List<SubAction> actions;
+        private static Dictionary<RecipeDef, IEnumerable<SubAction>> actions;
 
-        public static List<SubAction> Actions()
-        {
-            if (actions == null)
-            {
-                actions = recipesWithPart
-                    .Select(
-                        recipeWithPart =>
-                            new SubAction(
-                                "CustomActions.MedicalRecipesUtility",
-                                "MedicalRecipe",
-                                new List<string>()
-                                {
-                                    recipeWithPart.Item1.defName,
-                                    recipeWithPart.Item2?.Label
-                                },
-                                ToString(recipeWithPart)
+        public static Dictionary<RecipeDef, IEnumerable<SubAction>> Actions =>
+            actions
+            ?? (
+                actions = Recipes.ToDictionary(
+                    recipe => recipe,
+                    recipe =>
+                        GetFixedPartsToApplyOn(recipe)
+                            .Select(
+                                record =>
+                                    new SubAction("CustomActions.MedicalRecipesUtility:MedicalRecipe", ToString(recipe, record), new List<string> { recipe.defName, record?.Label })
                             )
-                    )
-                    .ToList();
-            }
-            return actions;
-        }
+                )
+            );
+        public static Func<List<SubAction>, IEnumerable<FloatMenuOption>> Options = subActions =>
+            new List<FloatMenuOption>
+            {
+                new FloatMenuOption(
+                    "MedicalOperations".Translate(),
+                    () =>
+                        Find.WindowStack.Add(
+                            new FloatMenu(
+                                Recipes
+                                    .Select(
+                                        recipe =>
+                                            new FloatMenuOption(
+                                                recipe.LabelCap,
+                                                () =>
+                                                {
+                                                    if (Actions[recipe].Count() == 1)
+                                                        subActions.Add(Actions[recipe].First());
+                                                    else
+                                                        Find.WindowStack.Add(
+                                                            new FloatMenu(
+                                                                Actions[recipe].Select(action => new FloatMenuOption(action.label, () => subActions.Add(action))).ToList()
+                                                            )
+                                                        );
+                                                }
+                                            )
+                                    )
+                                    .ToList()
+                            )
+                        )
+                ),
+                new FloatMenuOption(
+                    "CustomActions.ClearBillStack".Translate(),
+                    () => subActions.Add(new SubAction("CustomActions.MedicalRecipesUtility:ClearBillStack", "CustomActions.ClearBillStack".Translate()))
+                )
+            };
     }
 }
