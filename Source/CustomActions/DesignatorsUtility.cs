@@ -23,12 +23,7 @@ namespace CustomActions
         public static Designator GetDesignator(string name) =>
             _getDesignator.ContainsKey(name)
                 ? _getDesignator[name]
-                : (
-                    _getDesignator[name] =
-                        TypeByName(name) == null
-                            ? null
-                            : (Designator)Method("Verse.ReverseDesignatorDatabase:Get", generics: new[] { TypeByName(name) }).Invoke(Find.ReverseDesignatorDatabase, null)
-                );
+                : (_getDesignator[name] = TypeByName(name) == null ? null : (Designator)TypeByName(name).GetConstructor(new Type[0]).Invoke(null));
 
         public static Action<SearchResult, int> TryDesignate(string name) =>
             (result, count) =>
@@ -77,7 +72,6 @@ namespace CustomActions
             var harmony = new Harmony("localghost.customactions");
             var transpiler = new HarmonyMethod(Method("CustomActions.Startup:Transpiler"));
             harmony.Patch(typeof(ContentFinder<Texture2D>).GetMethod("Get"), transpiler: transpiler);
-            harmony.Patch(Method("Verse.MaterialPool:MatFrom", new[] { typeof(MaterialRequest) }), transpiler: transpiler);
         }
 
         static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
