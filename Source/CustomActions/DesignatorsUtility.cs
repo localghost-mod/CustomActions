@@ -53,6 +53,8 @@ namespace CustomActions
                 "RimWorld.Designator_Haul",
                 "RimWorld.Designator_Tame",
                 "RimWorld.Designator_Hunt",
+                "RimWorld.Designator_ReleaseAnimalToWild",
+                "RimWorld.Designator_Slaughter",
                 "RimWorld.Designator_Strip",
                 "RimWorld.Designator_Cancel",
                 "AllowTool.Designator_HaulUrgently",
