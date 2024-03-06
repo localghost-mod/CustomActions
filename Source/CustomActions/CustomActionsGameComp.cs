@@ -13,7 +13,5 @@ namespace CustomActions
         public override void ExposeData() => Scribe_Collections.Look(ref actions, "actions");
 
         public override void GameComponentTick() => actions.ForEach(action => action.DoAction());
-
-        public override void FinalizeInit() => DesignatorsUtility.DesignatorNames.ForEach(name => DesignatorsUtility.GetDesignator(name));
     }
 }

@@ -48,6 +48,7 @@ namespace CustomActions
             {
                 "RimWorld.Designator_PlantsHarvest",
                 "RimWorld.Designator_PlantsHarvestWood",
+                "RimWorld.Designator_PlantsCut",
                 "RimWorld.Designator_Mine",
                 "RimWorld.Designator_Deconstruct",
                 "RimWorld.Designator_Haul",
@@ -56,11 +57,14 @@ namespace CustomActions
                 "RimWorld.Designator_ReleaseAnimalToWild",
                 "RimWorld.Designator_Slaughter",
                 "RimWorld.Designator_Strip",
+                "RimWorld.Designator_Unforbid",
                 "RimWorld.Designator_Cancel",
                 "AllowTool.Designator_HaulUrgently",
                 "AllowTool.Designator_FinishOff",
                 "CaptureThem.Designator_CapturePawn",
-                "EasyUpgrades.Designator_IncreaseQuality"
+                "EasyUpgrades.Designator_IncreaseQuality",
+                "RimWorld___Improve_This.Designator_ImproveThis",
+                "RimWorld___Improve_This.Designator_ImproveThisClear",
             };
         public static Func<List<SubAction>, IEnumerable<FloatMenuOption>> Options = subActions =>
             Actions.Select(action => new FloatMenuOption(action.label, () => subActions.Add(action)));
@@ -71,20 +75,7 @@ namespace CustomActions
     {
         static Startup()
         {
-            var harmony = new Harmony("localghost.customactions");
-            var transpiler = new HarmonyMethod(Method("CustomActions.Startup:Transpiler"));
-            harmony.Patch(typeof(ContentFinder<Texture2D>).GetMethod("Get"), transpiler: transpiler);
-        }
-
-        static IEnumerable<CodeInstruction> Transpiler(IEnumerable<CodeInstruction> instructions)
-        {
-            foreach (var instruction in instructions)
-            {
-                if (instruction.opcode == OpCodes.Call && (MethodInfo)instruction.operand == Method("Verse.Log:Error", new[] { typeof(string) }))
-                    yield return new CodeInstruction(OpCodes.Call, Method("Verse.Log:Message", new[] { typeof(string) }));
-                else
-                    yield return instruction;
-            }
+            DesignatorsUtility.DesignatorNames.ForEach(name => DesignatorsUtility.GetDesignator(name));
         }
     }
 }
