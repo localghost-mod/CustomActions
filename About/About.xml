@@ -4,6 +4,7 @@
 	<author>localghost</author>
 	<supportedVersions>
 		<li>1.4</li>
+		<li>1.5</li>
 	</supportedVersions>
 	<packageId>localghost.CustomActions</packageId>
 	<modDependencies>
