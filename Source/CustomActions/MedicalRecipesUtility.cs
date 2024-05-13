@@ -48,8 +48,14 @@ namespace CustomActions
                         _bodyparts[recipe] = AllPart;
                     else if (recipe.workerClass == typeof(Recipe_RemoveImplant))
                     {
-                        var installImplant = Recipes.First(install => install.addsHediff == recipe.removesHediff);
-                        _bodyparts[recipe] = GetFixedPartsToApplyOn(installImplant);
+                        var installImplant = Recipes.FirstOrFallback(install => install.addsHediff == recipe.removesHediff);
+                        if (installImplant != null)
+                            _bodyparts[recipe] = GetFixedPartsToApplyOn(installImplant);
+                        else
+                        {
+                            Log.Warning($"Recipe_RemoveImplant {recipe.defName} ({recipe.label}) does not have a corresponding Recipe_InstallImplant, you need to manually select the corresponding BodyPartRecord.");
+                            _bodyparts[recipe] = AllPart;
+                        }
                     }
                     else
                     {
